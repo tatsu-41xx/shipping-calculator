@@ -37,7 +37,8 @@ def check_password():
     if login_btn:
         if password == correct_password:
             st.session_state.password_correct = True
-            st.experimental_rerun()
+            # experimental_rerunの代わりにrerunを使用
+            st.rerun()
         else:
             st.error("パスワードが正しくありません")
             return False
