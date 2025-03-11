@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  shipping-calculator:
+    build: .
+    container_name: shipping-calculator
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    environment:
+      - APP_PASSWORD=${APP_PASSWORD:-default_password}
+      - DEVELOPMENT_MODE=true
+    restart: unless-stopped

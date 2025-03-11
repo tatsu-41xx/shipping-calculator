@@ -1,0 +1,58 @@
+# Python関連
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 仮想環境
+venv/
+ENV/
+env/
+
+# Streamlit関連
+.streamlit/secrets.toml
+
+# 環境変数
+.env
+
+# ログファイル
+*.log
+
+# データベース
+*.db
+*.sqlite3
+
+# OS関連
+.DS_Store
+Thumbs.db
+
+# データファイル（機密情報）
+data/shipping_rates.csv
+/shipping_rates.csv
+
+# サンプルデータと人口分布データは除外しない
+!data/shipping_rates_sample.csv
+!data/population_data.csv
+
+# IDE関連
+.idea/
+.vscode/
+*.swp
+*.swo
