@@ -144,6 +144,50 @@ with st.sidebar:
     # 計算実行ボタン
     calc_button = st.button("送料を計算", type="primary")
 
+# サイドバー - 送料データのアップロード機能
+with st.sidebar:
+    st.markdown("---")
+    st.subheader("送料データのアップロード")
+    
+    st.markdown("""
+    送料は機密情報です。アップロードしたデータはセッション中のみ使用され、保存されません。
+    ブラウザを閉じるか更新すると、データは消去されます。
+    """)
+    
+    uploaded_file = st.file_uploader("送料CSVファイルをアップロード", type="csv")
+    
+    if uploaded_file is not None:
+        try:
+            # アップロードされたCSVを読み込み
+            uploaded_shipping_rates = pd.read_csv(uploaded_file)
+            
+            # 必要なカラムが含まれているか確認
+            required_columns = ['size_code', 'size_name', 'weight', '北海道', '北東北', '南東北', 
+                              '関東', '信越', '北陸', '中部', '関西', '中国', '四国', '九州', '沖縄']
+            
+            missing_columns = [col for col in required_columns if col not in uploaded_shipping_rates.columns]
+            
+            if missing_columns:
+                st.error(f"以下の必須カラムがCSVファイルに含まれていません: {', '.join(missing_columns)}")
+            else:
+                # セッションステートに保存（一時的な使用のみ）
+                st.session_state.custom_shipping_rates = uploaded_shipping_rates
+                st.success("送料データを正常に読み込みました！セッション中のみ有効です。")
+                
+                # アップロードされたデータの確認表示
+                with st.expander("アップロードしたデータを確認"):
+                    st.dataframe(uploaded_shipping_rates)
+                
+        except Exception as e:
+            st.error(f"ファイルの読み込み中にエラーが発生しました: {str(e)}")
+
+# データ読み込み（アップロードされたデータを優先）
+if 'custom_shipping_rates' in st.session_state:
+    shipping_rates = st.session_state.custom_shipping_rates
+    st.info("アップロードされた送料データを使用しています（セッション中のみ有効）")
+else:
+    shipping_rates = load_shipping_rates()
+
 # メインコンテンツ
 st.title("送料シミュレーター")
 
