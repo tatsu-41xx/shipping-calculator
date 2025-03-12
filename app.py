@@ -248,6 +248,7 @@ if 'has_result' in st.session_state and st.session_state.has_result:
     with col3:
         st.metric("1個あたりの平均送料", f"{summary['average_cost']:.1f}円")
     
+    ############################
     # サイズ分布の情報表示
     st.subheader("サイズ別情報")
     
@@ -264,6 +265,113 @@ if 'has_result' in st.session_state and st.session_state.has_result:
     size_info_df = pd.DataFrame(size_info_list)
     st.dataframe(size_info_df, use_container_width=True)
     
+
+    ############################
+    # エクスポート機能
+    st.subheader("結果のエクスポート")
+
+    def export_to_csv():
+        """シミュレーション結果をCSVとしてエクスポートする"""
+        # サマリー情報
+        summary_df = pd.DataFrame({
+            "項目": ["総出荷個数", "総送料", "1個あたりの平均送料"],
+            "値": [f"{summary['total_shipments']:,}個", 
+                f"{summary['total_cost']:,.0f}円", 
+                f"{summary['average_cost']:.1f}円"]
+        })
+        
+        # サイズ別情報
+        size_info_df_export = pd.DataFrame(size_info_list)
+        
+        # 全てのサイズの詳細情報を結合
+        all_size_details = []
+        for i, size_result in enumerate(size_results):
+            size_code = size_result['size_code'].iloc[0]
+            size_name = size_result['size_name'].iloc[0]
+            weight = size_result['weight'].iloc[0]
+            proportion = size_result['proportion'].iloc[0]
+            
+            # データフレームの作成
+            df = size_result.reset_index()
+            df['サイズ'] = f"{size_name} ({weight}) - {proportion*100:.1f}%"
+            all_size_details.append(df)
+        
+        # 全てのデータを結合
+        if all_size_details:
+            all_details_df = pd.concat(all_size_details)
+        else:
+            all_details_df = pd.DataFrame()
+        
+        # BytesIOオブジェクトを作成してメモリ上でCSVファイルを作成
+        csv_buffer = BytesIO()
+        
+        # ExcelWriterオブジェクトを作成
+        with pd.ExcelWriter(csv_buffer, engine='xlsxwriter') as writer:
+            summary_df.to_excel(writer, sheet_name='サマリー', index=False)
+            size_info_df_export.to_excel(writer, sheet_name='サイズ別情報', index=False)
+            
+            for i, size_result in enumerate(size_results):
+                size_code = size_result['size_code'].iloc[0]
+                size_name = size_result['size_name'].iloc[0]
+                
+                # データフレームの整形
+                size_display_df = size_result.reset_index()
+                
+                # カラム名を確認して適切に選択
+                size_columns = size_display_df.columns.tolist()
+                
+                if 'region' in size_columns:
+                    region_col = 'region'
+                else:
+                    region_col = size_columns[0]
+                
+                selected_columns = [region_col]
+                if 'prefectures' in size_columns:
+                    selected_columns.append('prefectures')
+                if 'size_shipments' in size_columns:
+                    selected_columns.append('size_shipments')
+                if 'rate' in size_columns:
+                    selected_columns.append('rate')
+                if 'size_cost' in size_columns:
+                    selected_columns.append('size_cost')
+                
+                display_df = size_display_df[selected_columns]
+                
+                # カラム名を変更
+                column_mapping = {
+                    region_col: '地域',
+                    'prefectures': '都道府県',
+                    'size_shipments': '出荷個数',
+                    'rate': '送料単価(円)',
+                    'size_cost': '送料合計(円)'
+                }
+                
+                # 存在するカラムのみリネーム
+                rename_dict = {col: column_mapping[col] for col in selected_columns if col in column_mapping}
+                display_df = display_df.rename(columns=rename_dict)
+                
+                # シートに書き込み
+                sheet_name = f"{size_name[:10]}" if i < 30 else f"サイズ{i+1}"
+                display_df.to_excel(writer, sheet_name=sheet_name, index=False)
+        
+        # バッファの位置を先頭に戻す
+        csv_buffer.seek(0)
+        
+        return csv_buffer
+
+    # 必要なライブラリのインポート
+    from io import BytesIO
+
+    # エクスポートボタン
+    if st.download_button(
+        label="Excelとしてダウンロード",
+        data=export_to_csv(),
+        file_name=f"送料シミュレーション_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.xlsx",
+        mime="application/vnd.ms-excel",
+    ):
+        st.success("エクスポートが完了しました！")
+
+    ########################################
     # サイズ別詳細タブ
     tab_size = st.tabs(["サイズ別詳細"])
     
