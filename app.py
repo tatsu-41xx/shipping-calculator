@@ -5,6 +5,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from collections import OrderedDict
+from io import BytesIO
 
 # 自作モジュールのインポート
 from auth import check_password
@@ -359,9 +360,6 @@ if 'has_result' in st.session_state and st.session_state.has_result:
         
         return csv_buffer
 
-    # 必要なライブラリのインポート
-    from io import BytesIO
-
     # エクスポートボタン
     if st.download_button(
         label="Excelとしてダウンロード",
@@ -390,11 +388,6 @@ if 'has_result' in st.session_state and st.session_state.has_result:
             
             # カラム名を確認して適切に選択
             size_columns = size_display_df.columns.tolist()
-            
-            # # 開発モード時のみデバッグ情報を表示
-            # is_dev_mode = os.getenv("DEVELOPMENT_MODE", "false").lower() in ("true", "1", "yes")
-            # if is_dev_mode:
-            #     st.write("デバッグ - 利用可能なカラム:", size_columns)
             
             if 'region' in size_columns:
                 region_col = 'region'
@@ -427,7 +420,13 @@ if 'has_result' in st.session_state and st.session_state.has_result:
             size_display_df.columns = new_cols
             
             # 表示用の書式設定
-            st.dataframe(size_display_df, use_container_width=True)
+            row_count = len(size_display_df)
+            table_height = min(row_count * 35 + 40, 600)  # 最大600pxまでに制限
+            st.dataframe(
+                size_display_df,
+                use_container_width=True,
+                height=table_height
+            )
             
             # # グラフ（出荷個数と送料合計を並べて表示）
             # col1, col2 = st.columns(2)
